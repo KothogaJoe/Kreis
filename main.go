@@ -17,10 +17,16 @@ type obstacle struct {
 }
 
 func (o obstacle) Draw() {
-	rl.DrawRectangle(int32(o.x), int32(o.y), int32(o.w), int32(o.h), o.c)
+	rl.DrawRectangle(
+		int32(o.x),
+		int32(o.y),
+		int32(o.w),
+		int32(o.h),
+		o.c,
+	)
 }
 
-func (o obstacle) IsColliding(playerX float64, playerY float64) bool {
+func (o obstacle) IsColliding(playerX, playerY float64) bool {
 	playerTop := playerY - playerRadius
 	playerBottom := playerY + playerRadius
 	playerLeft := playerX - playerRadius
@@ -34,27 +40,32 @@ func (o obstacle) IsColliding(playerX float64, playerY float64) bool {
 
 func main() {
 	rl.SetConfigFlags(rl.FlagVsyncHint)
-	rl.InitWindow(800, 450, "Flappy Bird")
+	rl.InitWindow(800, 450, "Mein Flappy Bird")
 	defer rl.CloseWindow()
-
 	rl.SetTargetFPS(60)
 
-	var posY float64 = 225
-	var velocityY float64 = 0
-	const gravity = 1200
-	var minY float64 = playerRadius
-	var maxY float64 = 450 - playerRadius
+	posY := float64(225)
+	velocityY := float64(0)
+
+	const gravity = 1200.0
+	const jumpStrength = -500.0
+	const playerX = 200.0
+
+	minY := float64(playerRadius)
+	maxY := float64(450 - playerRadius)
 
 	obstacles := []*obstacle{
-		&obstacle{500, 100, 100, 150, rl.Brown},
-		&obstacle{1000, 200, 100, 150, rl.Brown},
+		{500, 100, 100, 150, rl.Brown},
+		{900, 200, 100, 150, rl.Brown},
 	}
 
 	gameOver := false
 
 	for !rl.WindowShouldClose() {
 		deltaTime := float64(rl.GetFrameTime())
-		if !gameOver && rl.IsKeyPressed(rl.KeyR) {
+
+		// Neustart mit R
+		if gameOver && rl.IsKeyPressed(rl.KeyR) {
 			posY = 225
 			velocityY = 0
 			gameOver = false
@@ -67,28 +78,35 @@ func main() {
 		}
 
 		if !gameOver {
+			// Fliegen mit der Leertaste
 			if rl.IsKeyPressed(rl.KeySpace) {
-				velocityY = -500
-
-				velocityY += gravity * deltaTime
-				posY += velocityY * deltaTime
-
+				velocityY = jumpStrength
 			}
+
+			// Physik: Schwerkraft und Bewegung
+			velocityY += gravity * deltaTime
+			posY += velocityY * deltaTime
+
+			// Oberen und unteren Bildschirmrand prüfen
 			if posY < minY || posY > maxY {
 				gameOver = true
 			}
+
+			// Hindernisse bewegen und Kollision prüfen
 			for _, o := range obstacles {
 				o.x -= deltaTime * 100
 
 				if o.x+o.w < 0 {
 					o.x = 800
 				}
-				if o.IsColliding(200, posY) {
+
+				if o.IsColliding(playerX, posY) {
 					gameOver = true
 				}
-
 			}
 		}
+
+		// Zeichnen
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.Lime)
 
@@ -97,7 +115,7 @@ func main() {
 		}
 
 		rl.DrawCircle(
-			200,
+			int32(playerX),
 			int32(posY),
 			playerRadius,
 			rl.SkyBlue,
@@ -105,10 +123,13 @@ func main() {
 
 		if gameOver {
 			rl.DrawText("GAME OVER", 270, 170, 30, rl.Red)
-			rl.DrawText("Druecke R zum Neustarten",
-				220, 215, 20, rl.Black)
+			rl.DrawText(
+				"Druecke R zum Neustarten",
+				220, 215, 20, rl.Black,
+			)
 		}
 
 		rl.EndDrawing()
 	}
 }
+
