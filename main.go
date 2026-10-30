@@ -2,25 +2,27 @@ package main
 
 import (
 	"image/color"
+	"raylib-example/simplexnoise"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 const playerRadius = 20
-const gravity = 1200.0
-const jumpStrength = -500.0
-const playerX = 200.0
-const minY float64 = playerRadius
+const gravity = 1200
+const jumpStrength = -400
+const playerX = 200
+const minY = playerRadius
 
-var playerY = float64(225)
+var playerY float64 = 225
 var velocityY float64
 var gameOver = false
 var deltaTime float64
 var maxY float64
+var gameWorldX float64
 
 var obstacles = []*obstacle{
-	{500, 100, 100, 150, rl.Brown},
-	{900, 200, 100, 150, rl.Brown},
+	{500, 100, 100, 250, rl.Brown},
+	{900, 200, 100, 250, rl.Brown},
 }
 
 type obstacle struct {
@@ -53,6 +55,19 @@ func (o obstacle) IsColliding(playerX, playerY float64) bool {
 		playerTop < o.y+o.h
 }
 
+func worldNoise(x float64) float64 {
+	return (simplexnoise.Noise1((x)*0.002) + 1) / 2 * float64(rl.GetScreenHeight())
+}
+
+func (o *obstacle) PositionY() {
+	y := worldNoise(gameWorldX + o.x)
+	if y < float64(rl.GetScreenHeight())/2 {
+		o.y = y + playerRadius*4
+	} else {
+		o.y = y - playerRadius*4 - o.h
+	}
+}
+
 func drawGameScreen() {
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.Lime)
@@ -76,6 +91,13 @@ func drawGameScreen() {
 		)
 	}
 
+	linePoints := []rl.Vector2{}
+	for x := 0.0; x < float64(rl.GetScreenWidth()); x++ {
+		y := worldNoise(gameWorldX + x)
+		linePoints = append(linePoints, rl.Vector2{float32(x), float32(y)})
+	}
+	rl.DrawLineStrip(linePoints, rl.DarkPurple)
+
 	rl.EndDrawing()
 }
 
@@ -84,6 +106,7 @@ func handleRestart() {
 		playerY = 225
 		velocityY = 0
 		gameOver = false
+		gameWorldX = 0
 
 		obstacles[0].x = 500
 		obstacles[0].y = 100
@@ -108,18 +131,28 @@ func handleControl() {
 		if playerY < minY || playerY > maxY {
 			gameOver = true
 		}
+	}
+}
 
-		// Hindernisse bewegen und Kollision prüfen
-		for _, o := range obstacles {
-			o.x -= deltaTime * 100
+func gameWorldControl() {
+	if gameOver {
+		return
+	}
 
-			if o.x+o.w < 0 {
-				o.x = 800
-			}
+	gameWorldX += deltaTime * 100
 
-			if o.IsColliding(playerX, playerY) {
-				gameOver = true
-			}
+	// Hindernisse bewegen und Kollision prüfen
+	for _, o := range obstacles {
+		o.x -= deltaTime * 100
+
+		if o.x+o.w < 0 {
+			o.x = 800
+		}
+
+		o.PositionY()
+
+		if o.IsColliding(playerX, playerY) {
+			gameOver = true
 		}
 	}
 }
@@ -132,12 +165,17 @@ func main() {
 
 	velocityY = float64(0)
 
+	for _, o := range obstacles {
+		o.PositionY()
+	}
+
 	for !rl.WindowShouldClose() {
 		deltaTime = float64(rl.GetFrameTime())
 		maxY = float64(rl.GetScreenHeight()) - playerRadius
 
 		handleRestart()
 		handleControl()
+		gameWorldControl()
 
 		drawGameScreen()
 	}
