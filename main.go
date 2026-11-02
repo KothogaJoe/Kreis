@@ -5,6 +5,7 @@ import (
 	"math"
 	"raylib-example/simplexnoise"
 
+	gui "github.com/gen2brain/raylib-go/raygui"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -95,7 +96,6 @@ func (o *obstacle) PositionY() {
 }
 
 func drawGameScreen() {
-	rl.BeginDrawing()
 	rl.ClearBackground(rl.Lime)
 
 	drawBackground()
@@ -124,10 +124,6 @@ func drawGameScreen() {
 
 	if gameOver {
 		rl.DrawText("GAME OVER", 270, 170, 30, rl.Red)
-		rl.DrawText(
-			"Drücke R zum Neustarten",
-			220, 215, 20, rl.Black,
-		)
 	}
 
 	linePoints := []rl.Vector2{}
@@ -136,12 +132,10 @@ func drawGameScreen() {
 		linePoints = append(linePoints, rl.Vector2{float32(x), float32(y)})
 	}
 	rl.DrawLineStrip(linePoints, rl.DarkPurple)
-
-	rl.EndDrawing()
 }
 
 func handleRestart() {
-	if gameOver && rl.IsKeyPressed(rl.KeyR) {
+	if gameOver && gui.Button(rl.Rectangle{220, 215, 200, 100}, "Restart") {
 		playerY = 225
 		velocityY = 0
 		gameOver = false
@@ -215,6 +209,7 @@ func drawBackground() {
 func main() {
 	rl.SetConfigFlags(rl.FlagVsyncHint)
 	rl.InitWindow(800, 450, "Mein Flappy Bird")
+	gui.SetStyle(gui.DEFAULT, gui.TEXT_SIZE, 24)
 	defer rl.CloseWindow()
 	birdTexture = rl.LoadTexture("bird.png")
 	obstacleTexture = rl.LoadTexture("obstacle.png")
@@ -235,10 +230,12 @@ func main() {
 		deltaTime = float64(rl.GetFrameTime())
 		maxY = float64(rl.GetScreenHeight()) - playerRadius
 
-		handleRestart()
 		handleControl()
 		gameWorldControl()
 
+		rl.BeginDrawing()
 		drawGameScreen()
+		handleRestart()
+		rl.EndDrawing()
 	}
 }
