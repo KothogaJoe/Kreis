@@ -19,6 +19,9 @@ var gameOver = false
 var deltaTime float64
 var maxY float64
 var gameWorldX float64
+var birdTexture rl.Texture2D
+var obstacleTexture rl.Texture2D
+var backgroundTexture rl.Texture2D
 
 var obstacles = []*obstacle{
 	{500, 100, 100, 250, rl.Brown},
@@ -34,12 +37,22 @@ type obstacle struct {
 }
 
 func (o obstacle) Draw() {
-	rl.DrawRectangle(
-		int32(o.x),
-		int32(o.y),
-		int32(o.w),
-		int32(o.h),
-		o.c,
+	rl.DrawTexturePro(
+			obstacleTexture,
+			rl.Rectangle{
+				0, 0,
+				float32(obstacleTexture.Width),
+				float32(obstacleTexture.Height),
+			},
+			rl.Rectangle{
+				float32(o.x),
+				float32(o.y),
+				float32(o.w),
+				float32(o.h),
+			},
+			rl.Vector2{0, 0},
+			0,
+			rl.White,
 	)
 }
 
@@ -76,11 +89,22 @@ func drawGameScreen() {
 		o.Draw()
 	}
 
-	rl.DrawCircle(
-		int32(playerX),
-		int32(playerY),
-		playerRadius,
-		rl.SkyBlue,
+	rl.DrawTexturePro(
+		birdTexture,
+		rl.Rectangle{
+			0, 0,
+			float32(birdTexture.Width),
+			float32(birdTexture.Height),
+		},
+		rl.Rectangle{
+			float32(playerX - playerRadius),
+			float32(playerY - playerRadius),
+			float32(playerRadius * 2),
+			float32(playerRadius * 2),
+		},
+		rl.Vector2{0, 0},
+		0,
+		rl.White,
 	)
 
 	if gameOver {
@@ -161,6 +185,13 @@ func main() {
 	rl.SetConfigFlags(rl.FlagVsyncHint)
 	rl.InitWindow(800, 450, "Mein Flappy Bird")
 	defer rl.CloseWindow()
+	birdTexture = rl.LoadTexture("bird.png")
+	obstacleTexture = rl.LoadTexture("obstacle.png")
+	backgroundTexture = rl.LoadTexture("background.png")
+	
+	defer rl.UnloadTexture(birdTexture)
+	defer rl.UnloadTexture(obstacleTexture)
+	defer rl.UnloadTexture(backgroundTexture)
 	rl.SetTargetFPS(60)
 
 	velocityY = float64(0)
