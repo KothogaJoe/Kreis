@@ -2,6 +2,7 @@ package main
 
 import (
 	"image/color"
+	"math"
 	"raylib-example/simplexnoise"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -38,21 +39,21 @@ type obstacle struct {
 
 func (o obstacle) Draw() {
 	rl.DrawTexturePro(
-			obstacleTexture,
-			rl.Rectangle{
-				0, 0,
-				float32(obstacleTexture.Width),
-				float32(obstacleTexture.Height),
-			},
-			rl.Rectangle{
-				float32(o.x),
-				float32(o.y),
-				float32(o.w),
-				float32(o.h),
-			},
-			rl.Vector2{0, 0},
-			0,
-			rl.White,
+		obstacleTexture,
+		rl.Rectangle{
+			0, 0,
+			float32(obstacleTexture.Width),
+			float32(obstacleTexture.Height),
+		},
+		rl.Rectangle{
+			float32(o.x),
+			float32(o.y),
+			float32(o.w),
+			float32(o.h),
+		},
+		rl.Vector2{0, 0},
+		0,
+		rl.White,
 	)
 }
 
@@ -84,6 +85,8 @@ func (o *obstacle) PositionY() {
 func drawGameScreen() {
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.Lime)
+
+	drawBackground()
 
 	for _, o := range obstacles {
 		o.Draw()
@@ -181,6 +184,22 @@ func gameWorldControl() {
 	}
 }
 
+func drawBackground() {
+	h := float64(rl.GetScreenHeight())
+	w := h * float64(backgroundTexture.Width) / float64(backgroundTexture.Height)
+	source := rl.Rectangle{0, 0, float32(backgroundTexture.Width), float32(backgroundTexture.Height)}
+	for x := -math.Mod(gameWorldX, w); x < float64(rl.GetScreenWidth()); x += w {
+		rl.DrawTexturePro(
+			backgroundTexture,
+			source,
+			rl.Rectangle{float32(x), 0, float32(w), float32(h)},
+			rl.Vector2{0, 0},
+			0,
+			rl.White,
+		)
+	}
+}
+
 func main() {
 	rl.SetConfigFlags(rl.FlagVsyncHint)
 	rl.InitWindow(800, 450, "Mein Flappy Bird")
@@ -188,7 +207,7 @@ func main() {
 	birdTexture = rl.LoadTexture("bird.png")
 	obstacleTexture = rl.LoadTexture("obstacle.png")
 	backgroundTexture = rl.LoadTexture("background.png")
-	
+
 	defer rl.UnloadTexture(birdTexture)
 	defer rl.UnloadTexture(obstacleTexture)
 	defer rl.UnloadTexture(backgroundTexture)
