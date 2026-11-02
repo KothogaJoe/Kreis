@@ -26,11 +26,13 @@ var birdTexture rl.Texture2D
 var obstacleTexture rl.Texture2D
 var backgroundTexture rl.Texture2D
 
-var obstacles = []*obstacle{
-	{500, 100, 150, 400, rl.Brown},
-	{800, 200, 150, 400, rl.Brown},
-	{1000, 200, 150, 400, rl.Brown},
-}
+const obstacleCount = 3
+const obstacleWidth = 150
+const obstacleHeight = 400
+const obstacleSpacing = 350
+const firstObstacleX = 500
+
+var obstacles []*obstacle
 
 type obstacle struct {
 	x float64
@@ -82,6 +84,19 @@ func randomBool(seed int64) bool {
 	z = (z ^ (z >> 27)) * 0x94d049bb133111eb
 	z ^= z >> 31
 	return z>>63 == 1
+}
+
+func resetObstacles() {
+	obstacles = make([]*obstacle, obstacleCount)
+	for i := range obstacles {
+		obstacles[i] = &obstacle{
+			x: firstObstacleX + float64(i)*obstacleSpacing,
+			w: obstacleWidth,
+			h: obstacleHeight,
+			c: rl.Brown,
+		}
+		obstacles[i].PositionY()
+	}
 }
 
 func (o *obstacle) PositionY() {
@@ -140,12 +155,7 @@ func handleRestart() {
 		velocityY = 0
 		gameOver = false
 		gameWorldX = 0
-
-		obstacles[0].x = 500
-		obstacles[0].y = 100
-
-		obstacles[1].x = 900
-		obstacles[1].y = 200
+		resetObstacles()
 	}
 }
 
@@ -179,7 +189,7 @@ func gameWorldControl() {
 		o.x -= deltaTime * 100
 
 		if o.x+o.w < 0 {
-			o.x = 800
+			o.x += obstacleCount * obstacleSpacing
 		}
 
 		o.PositionY()
@@ -222,9 +232,7 @@ func main() {
 
 	velocityY = float64(0)
 
-	for _, o := range obstacles {
-		o.PositionY()
-	}
+	resetObstacles()
 
 	for !rl.WindowShouldClose() {
 		deltaTime = float64(rl.GetFrameTime())
