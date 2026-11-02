@@ -9,6 +9,7 @@ import (
 )
 
 const playerRadius = 20
+const playerCollisionRadius = 5
 const gravity = 1200
 const jumpStrength = -400
 const playerX = 200
@@ -25,8 +26,9 @@ var obstacleTexture rl.Texture2D
 var backgroundTexture rl.Texture2D
 
 var obstacles = []*obstacle{
-	{500, 100, 100, 250, rl.Brown},
-	{900, 200, 100, 250, rl.Brown},
+	{500, 100, 150, 400, rl.Brown},
+	{800, 200, 150, 400, rl.Brown},
+	{1000, 200, 150, 400, rl.Brown},
 }
 
 type obstacle struct {
@@ -58,10 +60,10 @@ func (o obstacle) Draw() {
 }
 
 func (o obstacle) IsColliding(playerX, playerY float64) bool {
-	playerTop := playerY - playerRadius
-	playerBottom := playerY + playerRadius
-	playerLeft := playerX - playerRadius
-	playerRight := playerX + playerRadius
+	playerTop := playerY - playerCollisionRadius
+	playerBottom := playerY + playerCollisionRadius
+	playerLeft := playerX - playerCollisionRadius
+	playerRight := playerX + playerCollisionRadius
 
 	return playerRight > o.x &&
 		playerLeft < o.x+o.w &&
@@ -73,9 +75,19 @@ func worldNoise(x float64) float64 {
 	return (simplexnoise.Noise1((x)*0.002) + 1) / 2 * float64(rl.GetScreenHeight())
 }
 
+func randomBool(seed int64) bool {
+	z := uint64(seed) + 0x9e3779b97f4a7c15
+	z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9
+	z = (z ^ (z >> 27)) * 0x94d049bb133111eb
+	z ^= z >> 31
+	return z>>63 == 1
+}
+
 func (o *obstacle) PositionY() {
-	y := worldNoise(gameWorldX + o.x)
-	if y < float64(rl.GetScreenHeight())/2 {
+	worldX := gameWorldX + o.x
+	y := worldNoise(worldX)
+	third := float64(rl.GetScreenHeight()) / 3
+	if y < third || y < 2*third && randomBool(int64(math.Round(worldX))) {
 		o.y = y + playerRadius*4
 	} else {
 		o.y = y - playerRadius*4 - o.h
